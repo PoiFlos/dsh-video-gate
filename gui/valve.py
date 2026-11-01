@@ -11,11 +11,22 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 import tkinter as tk
 from tkinter import ttk
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "_vendor"))
 import valve_state as vs  # noqa: E402
+
+# 托盘是可选的：装了 pystray + Pillow 就缩到托盘，没装就缩到任务栏。
+try:
+    import pystray  # type: ignore
+    from PIL import Image, ImageDraw  # type: ignore
+
+    HAVE_TRAY = True
+except Exception:
+    HAVE_TRAY = False
 
 
 def enable_dpi_awareness() -> None:
@@ -32,11 +43,14 @@ class ValveWindow:
         self.root = root
         self.vars: dict[str, tk.BooleanVar] = {}
         self.syncing = False
+        self.pending: str | None = None
+        self.tray = None
 
         root.title("视频通道阀门")
         root.resizable(False, False)
         root.attributes("-topmost", True)
         root.configure(padx=14, pady=12)
+        root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         header = ttk.Label(root, text="视频通道阀门", font=("Microsoft YaHei UI", 13, "bold"))
         header.grid(row=0, column=0, columnspan=2, sticky="w")
@@ -96,6 +110,38 @@ class ValveWindow:
 
     # ------------------------------------------------------------------ 交互
 
+    def on_close(self) -> None:
+        """点关闭 = 收起来，而不是退出。"""
+        if HAVE_TRAY:
+            self.ensure_tray()
+            self.root.withdraw()
+        else:
+            self.root.iconify()
+
+    def ensure_tray(self) -> None:
+        if self.tray is not None or not HAVE_TRAY:
+            return
+        image = Image.new("RGB", (64, 64), (16, 26, 43))
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((10, 10, 54, 54), fill=(255, 209, 102))
+        menu = pystray.Menu(
+            pystray.MenuItem("显示窗口", lambda: self._post("show"), default=True),
+            pystray.MenuItem("全部关闭", lambda: self._post("all-off")),
+            pystray.MenuItem("全部打开", lambda: self._post("all-on")),
+            pystray.MenuItem("退出", lambda: self._post("quit")),
+        )
+        self.tray = pystray.Icon("video-gate", image, "视频通道阀门", menu)
+        threading.Thread(target=self.tray.run, daemon=True).start()
+
+    def _post(self, action: str) -> None:
+        """托盘线程只写一个标记，真正的 Tk 操作留给主线程的轮询去做。"""
+        self.pending = action
+
+    def restore(self) -> None:
+        self.root.deiconify()
+        self.root.lift()
+        self.root.attributes("-topmost", self.topmost.get())
+
     def on_toggle(self, name: str) -> None:
         if self.syncing:
             return
@@ -124,7 +170,22 @@ class ValveWindow:
         self.status.configure(text=f"当前允许：{summary}\n最近：{vs.last_event()}")
 
     def poll(self) -> None:
-        """外部（插件/命令行）改了状态时，窗口跟着变。"""
+        """外部（插件/命令行）改了状态时，窗口跟着变；顺便处理托盘点单。"""
+        action, self.pending = self.pending, None
+        if action == "show":
+            self.restore()
+        elif action == "all-off":
+            self.bulk(False)
+        elif action == "all-on":
+            self.bulk(True)
+        elif action == "quit":
+            if self.tray is not None:
+                try:
+                    self.tray.stop()
+                except Exception:
+                    pass
+            self.root.destroy()
+            return
         try:
             self.render(vs.load())
         except Exception:

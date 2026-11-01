@@ -1,6 +1,7 @@
 # 依赖与生成物：不进仓库（ffmpeg 87MB、模型 465MB，超过 GitHub 限制）
 tools/
 testmedia/
+gui/_vendor/
 
 # 运行时缓存与状态
 cache/

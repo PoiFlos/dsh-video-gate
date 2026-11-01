@@ -9,10 +9,12 @@
  */
 
 import path from 'node:path'
+import { spawn } from 'node:child_process'
+import { unlink } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { CHANNELS, LABELS, loadState, saveState, stateFile, appendAudit } from './lib/state.js'
 import { classify } from './lib/classify.js'
-import { readBilibili, readLocal, transcribeMedia, fmt } from './lib/providers.js'
+import { readBilibili, readLocal, transcribeMedia, cookiePath, fmt } from './lib/providers.js'
 
 export const name = 'dsh-video-gate'
 export const inject = ['tools']
@@ -367,6 +369,94 @@ export function apply(ctx, config) {
         },
       }),
     'video-gate: video_enable',
+  )
+
+  // ------------------------------------------------------------- video_login
+
+  ctx.effect(
+    () =>
+      ctx.tools.register({
+        name: 'video_login',
+        description:
+          '打开 B 站登录页，并说明如何把 SESSDATA 放到本地文件（可选；插件只在 B 站域名上带这个值，不记录、不外传）。用于取需要登录的 AI 字幕。',
+        parameters: { type: 'object', properties: {}, additionalProperties: false },
+        output: {
+          schema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
+          render(_args, value) {
+            return [{ type: 'text', text: String(value?.text ?? '') }]
+          },
+        },
+        timeoutMs: 20_000,
+        async execute(_args, exec) {
+          try {
+            spawn('cmd', ['/c', 'start', '', 'https://passport.bilibili.com/login'], {
+              detached: true,
+              stdio: 'ignore',
+              windowsHide: true,
+            }).unref()
+          } catch {
+            /* 打不开浏览器就只给文字步骤 */
+          }
+          await appendAudit(cfg, { event: 'login-page', session: String(exec.agent?.id ?? '') })
+          const file = cookiePath(cfg)
+          return {
+            text: [
+              '已尝试在浏览器打开 B 站登录页。登录完成后，把登录态放进本地文件：',
+              '',
+              '1. 在 bilibili.com 页面按 F12 → Application（应用）→ Cookies → https://www.bilibili.com',
+              '2. 找到 `SESSDATA`，复制它的值（很长的一串字符）',
+              '3. 新建/编辑这个文件，只写一行：',
+              `   ${file}`,
+              '   内容形如：SESSDATA=粘贴的那一串',
+              '4. 回来跟我说一句「登录好了」，我重新读一次，这次会带上字幕。',
+              '',
+              '安全说明：',
+              '- 只有 api.bilibili.com / *.hdslb.com / *.bilivideo.com 这些 B 站域名会带这个值；其他站点一律不带',
+              '- 不写日志、不写进对话记录、不发往任何第三方',
+              '- 想撤销：删掉那个文件，再去 B 站「退出所有设备」',
+              '',
+              '也说清楚代价：SESSDATA 等于你的登录凭据。文件放在本机，能读这台电脑的人就能用。',
+              '不想承担就别放——那就只能看画面，拿不到台词。',
+            ].join('\n'),
+          }
+        },
+      }),
+    'video-gate: video_login',
+  )
+
+  // ------------------------------------------------------------ video_logout
+
+  ctx.effect(
+    () =>
+      ctx.tools.register({
+        name: 'video_logout',
+        description: '删掉本地保存的 B 站 SESSDATA，让插件回到匿名状态。',
+        parameters: { type: 'object', properties: {}, additionalProperties: false },
+        output: {
+          schema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
+          render(_args, value) {
+            return [{ type: 'text', text: String(value?.text ?? '') }]
+          },
+        },
+        timeoutMs: 15_000,
+        async execute() {
+          const file = cookiePath(cfg)
+          let removed = false
+          try {
+            await unlink(file)
+            removed = true
+          } catch {
+            /* 文件本来就不在 */
+          }
+          await appendAudit(cfg, { event: 'logout', removed })
+          return {
+            text: removed
+              ? `已删除 ${file}，插件回到匿名状态（再来就只有公开数据）。`
+              : `没有找到 ${file}，插件本来就是匿名状态。`,
+          }
+        },
+      }),
+    'video-gate: video_logout',
   )
 
   // ------------------------------------------------------------ video_valve
