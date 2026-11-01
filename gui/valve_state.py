@@ -112,6 +112,23 @@ def has_session() -> bool:
         return False
 
 
+def save_session(value: str) -> bool:
+    """把用户粘贴的值写成 bilibili.cookie。接受 `SESSDATA=xxx`、纯值、带引号三种形式。"""
+    text = (value or "").strip()
+    if text.lower().startswith("sessdata="):
+        text = text.split("=", 1)[1]
+    text = text.strip().strip('"').strip("'").strip()
+    if len(text) < 8 or len(text) > 4096 or any(ch in text for ch in "\r\n;"):
+        return False
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        COOKIE_FILE.write_text("SESSDATA=" + text + "\n", encoding="utf-8")
+        audit({"event": "login-saved", "via": "valve-window"})
+        return True
+    except Exception:
+        return False
+
+
 def logout() -> bool:
     """删掉登录态文件。返回是否真的删掉了东西。"""
     try:
@@ -158,5 +175,5 @@ def last_event() -> str:
 __all__ = [
     "STATE_DIR", "STATE_FILE", "AUDIT_FILE", "COOKIE_FILE", "CHANNELS",
     "load", "save", "audit", "set_channel", "set_all",
-    "has_session", "logout", "last_event",
+    "has_session", "save_session", "logout", "last_event",
 ]

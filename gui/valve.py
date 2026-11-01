@@ -101,7 +101,8 @@ class ValveWindow:
         row += 1
         self.session_label = ttk.Label(session, text="", font=("Microsoft YaHei UI", 9), foreground="#333333")
         self.session_label.pack(side="left")
-        ttk.Button(session, text="退出 B 站登录", command=self.logout).pack(side="right")
+        ttk.Button(session, text="退出登录", command=self.logout).pack(side="right")
+        ttk.Button(session, text="粘贴登录态", command=self.paste_login).pack(side="right", padx=6)
 
         self.path_label = ttk.Label(
             root,
@@ -166,6 +167,46 @@ class ValveWindow:
         )
         if removed:
             messagebox.showinfo("视频通道阀门", "已删掉本地保存的 B 站登录态（SESSDATA）。\n想再用时说「登录 B 站」重新拿一次。")
+
+    def paste_login(self) -> None:
+        """粘贴 SESSDATA：避开记事本的 BOM / 扩展名坑。"""
+        win = tk.Toplevel(self.root)
+        win.title("粘贴 B 站登录态")
+        win.attributes("-topmost", True)
+        win.resizable(False, False)
+        win.configure(padx=14, pady=12)
+
+        ttk.Label(
+            win,
+            text="把 SESSDATA 的值粘进来（可以带 SESSDATA= 前缀）",
+            font=("Microsoft YaHei UI", 9),
+        ).grid(row=0, column=0, columnspan=2, sticky="w")
+
+        ttk.Label(
+            win,
+            text="取法：bilibili.com 按 F12 → Application → Cookies →\nhttps://www.bilibili.com → 复制 SESSDATA 的值",
+            foreground="#666666",
+            font=("Microsoft YaHei UI", 8),
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 8))
+
+        var = tk.StringVar()
+        entry = ttk.Entry(win, textvariable=var, width=46, show="*")
+        entry.grid(row=2, column=0, columnspan=2, sticky="we")
+        entry.focus_set()
+
+        def confirm() -> None:
+            if vs.save_session(var.get()):
+                win.destroy()
+                self.render(vs.load())
+                messagebox.showinfo("视频通道阀门", "登录态已保存。\n现在可以说「登录好了」，让插件重新读视频。")
+            else:
+                messagebox.showerror("视频通道阀门", "这个值看起来不对（太短，或含换行/分号）。\n只复制 SESSDATA 的值本身。")
+
+        buttons = ttk.Frame(win)
+        buttons.grid(row=3, column=0, columnspan=2, sticky="e", pady=(10, 0))
+        ttk.Button(buttons, text="保存", command=confirm).pack(side="left")
+        ttk.Button(buttons, text="取消", command=win.destroy).pack(side="left", padx=6)
+        entry.bind("<Return>", lambda _event: confirm())
 
     # ------------------------------------------------------------------ 显示
 
