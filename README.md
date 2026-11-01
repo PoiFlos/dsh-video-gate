@@ -11,8 +11,8 @@
 
 ## 本地通道的位置
 
-- ffmpeg：`<工作区>\tools\ffmpeg\ffmpeg.exe`（来历与哈希见该目录的 `PROVENANCE.md`）
-- whisper：`<工作区>\tools\whisper\whisper-cli.exe` + `models\ggml-small.bin`（同目录 `PROVENANCE.md`）
+- ffmpeg：`<工作区>\tools\ffmpeg\ffmpeg.exe`（来源与哈希见 [docs/provenance-ffmpeg.md](docs/provenance-ffmpeg.md)）
+- whisper：`<工作区>\tools\whisper\whisper-cli.exe` + `models\ggml-small.bin`（见 [docs/provenance-whisper.md](docs/provenance-whisper.md)）
 - 允许的根目录：写在 `%USERPROFILE%\.dsh\video-gate\state.json` 的 `localRoots` 里，默认
   `<工作区>` + `%USERPROFILE%\Videos`
 - 没有 `ffprobe`：时长从 `ffmpeg -i` 的 stderr 解析
