@@ -5,6 +5,9 @@
 > **第一次用？** 看 [docs/安装与使用.md](docs/安装与使用.md)：从下载、装依赖、配 `localRoots`，
 > 到日常问法、卸载和故障排查，都在那一份里。
 >
+> **想让 AI 自己装？** 把这个仓库丢给 DeepSeek Harness（或任何能跑命令的 agent），让它读
+> [AGENTS.md](AGENTS.md) —— 里面写好了每一步、需要你拍板的点、和验收标准。
+>
 > 每个会话先发一句 **「启用读取视频插件」**，之后发链接或路径即可（「关闭读取视频插件」停用）。
 >
 > 想随时开关通道：双击 **`启动阀门.cmd`**（或桌面快捷方式）打开独立小窗口，勾选立即生效，不用重启。
@@ -122,12 +125,21 @@
 ## 安装
 
 ```powershell
-git clone https://github.com/<你的账号>/dsh-video-gate.git
+git clone https://github.com/PoiFlos/dsh-video-gate.git
 plugin_manager action=install_bundle target=<克隆路径>
 ```
 
-依赖不随仓库分发（ffmpeg 87MB、模型 465MB 都超过 GitHub 的文件限制），
-下载地址与 sha256 见 `tools/*/PROVENANCE.md` 的写法。
+依赖（ffmpeg ~84MB / whisper ~11MB / 模型 ~465MB）不随仓库分发，一条命令装好并校验哈希：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File <克隆路径>\install-deps.ps1 -Plan   # 先看来源和哈希
+powershell -ExecutionPolicy Bypass -File <克隆路径>\install-deps.ps1        # 同意后再下载
+```
+
+装到 `<克隆路径>\..\tools\`（插件就是去那儿找的），不装服务、不改 PATH、不需要管理员权限；重复跑会跳过已就绪的项。
+哈希来源见 `docs/provenance-*.md`。
+
+**交给 AI 装**：见 [AGENTS.md](AGENTS.md)。
 
 ## 卸载
 
