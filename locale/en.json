@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Video Gate",
+    "description": "Reads a video only through channels you open: local files by default, Bilibili only after you approve it in a dialog."
+  }
+}

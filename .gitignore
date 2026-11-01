@@ -1,0 +1,28 @@
+# 依赖与生成物：不进仓库（ffmpeg 87MB、模型 465MB，超过 GitHub 限制）
+tools/
+testmedia/
+
+# 运行时缓存与状态
+cache/
+*.log
+*.tmp
+*.bak
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.swp
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+.npm/

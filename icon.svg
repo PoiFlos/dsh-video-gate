@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Video Gate">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101a2b"/>
+      <stop offset="1" stop-color="#1d2c44"/>
+    </linearGradient>
+    <linearGradient id="shutter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#f0a12b"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#bg)"/>
+  <rect x="36" y="66" width="184" height="124" rx="14" fill="none" stroke="#5f7ea8" stroke-width="8"/>
+  <g fill="#5f7ea8">
+    <rect x="52" y="82" width="14" height="14" rx="3"/>
+    <rect x="52" y="160" width="14" height="14" rx="3"/>
+    <rect x="190" y="82" width="14" height="14" rx="3"/>
+    <rect x="190" y="160" width="14" height="14" rx="3"/>
+  </g>
+  <path d="M96 100 L156 128 L96 156 Z" fill="url(#shutter)"/>
+  <g stroke="url(#shutter)" stroke-width="10" stroke-linecap="round">
+    <line x1="64" y1="204" x2="88" y2="204"/>
+    <line x1="108" y1="204" x2="148" y2="204"/>
+    <line x1="168" y1="204" x2="192" y2="204"/>
+  </g>
+  <circle cx="128" cy="204" r="7" fill="#ffd166"/>
+</svg>

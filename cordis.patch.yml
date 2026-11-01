@@ -1,0 +1,4 @@
+- insert:
+    - id: video-gate
+      name: 'dsh-video-gate'
+      config: {}

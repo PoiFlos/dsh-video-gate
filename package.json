@@ -1,0 +1,26 @@
+{
+  "name": "dsh-video-gate",
+  "version": "0.6.0",
+  "private": true,
+  "type": "module",
+  "description": "Channel-gated video reading for DeepSeek Harness: local files only by default; Bilibili stays closed until the user opens the valve.",
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "tools",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
