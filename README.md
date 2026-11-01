@@ -135,6 +135,22 @@ plugin_manager action=install_bundle target=<克隆路径>
 plugin_manager action=remove_bundle target=dsh-video-gate
 ```
 
+## 变更记录
+
+按时间倒序，只记影响使用的改动。
+
+| 版本 | 改动 |
+|---|---|
+| 0.9.0 | 阀门窗口：粘贴登录态 / 退出登录 / 登录态状态显示；关窗口缩托盘；用到登录态后提醒可退出 |
+| 0.9.0 | B 站 AI 字幕：本地缓存 + 重试 8 次 + 严格归属校验（时长覆盖、关键词至少命中 2 个）。此前校验过松，会让 `in`/`si` 这种片段命中一切英文 |
+| 0.9.0 | 会话级唤醒：发「启用读取视频插件」才允许读取；未启用时直接拒绝 |
+| 0.8.0 | 可选登录态（`video_login` / `video_logout`），用于取需要登录的 AI 字幕 |
+| 0.7.0 | 独立阀门窗口（`gui/valve.py`），勾选即写 `state.json`，不用重启 |
+| 0.6.0 | 本地 whisper.cpp 转写（`transcribe: true`），音频不出机器 |
+| 0.5.0 | 本地 ffmpeg 抽帧；`localRoots` 从 `state.json` 读取；无 `ffprobe` 时从 `ffmpeg -i` 解析时长 |
+| 0.4.0 | 通道收敛为「本地 + Bilibili」；YouTube / 小红书 / Netflix 明确不支持 |
+| 0.1.0 | 初版：通道分类、阀门弹窗、审计日志 |
+
 ## 许可
 
 MIT。`tools/` 里的第三方二进制各自遵守其许可（ffmpeg 为 GPL，whisper.cpp 为 MIT）。
