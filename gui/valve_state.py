@@ -14,6 +14,7 @@ from pathlib import Path
 STATE_DIR = Path(os.environ.get("VIDEO_GATE_HOME") or (Path.home() / ".dsh" / "video-gate"))
 STATE_FILE = STATE_DIR / "state.json"
 AUDIT_FILE = STATE_DIR / "audit.jsonl"
+COOKIE_FILE = STATE_DIR / "bilibili.cookie"
 
 CHANNELS: list[tuple[str, str]] = [("local", "本地文件"), ("bilibili", "Bilibili")]
 
@@ -103,6 +104,24 @@ def set_all(on: bool) -> dict:
     return state
 
 
+def has_session() -> bool:
+    """有没有保存 B 站登录态（只看文件在不在、有没有内容，不读值）。"""
+    try:
+        return bool(COOKIE_FILE.read_text(encoding="utf-8").strip())
+    except Exception:
+        return False
+
+
+def logout() -> bool:
+    """删掉登录态文件。返回是否真的删掉了东西。"""
+    try:
+        COOKIE_FILE.unlink()
+        audit({"event": "logout", "via": "valve-window"})
+        return True
+    except Exception:
+        return False
+
+
 def last_event() -> str:
     """审计日志最后一条的简要描述，用来在窗口里显示“最近发生了什么”。"""
     try:
@@ -137,6 +156,7 @@ def last_event() -> str:
 
 
 __all__ = [
-    "STATE_DIR", "STATE_FILE", "AUDIT_FILE", "CHANNELS",
-    "load", "save", "audit", "set_channel", "set_all", "last_event",
+    "STATE_DIR", "STATE_FILE", "AUDIT_FILE", "COOKIE_FILE", "CHANNELS",
+    "load", "save", "audit", "set_channel", "set_all",
+    "has_session", "logout", "last_event",
 ]

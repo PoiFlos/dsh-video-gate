@@ -13,7 +13,7 @@ import os
 import sys
 import threading
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "_vendor"))
@@ -96,6 +96,13 @@ class ValveWindow:
         self.status.grid(row=row, column=0, columnspan=2, sticky="w")
         row += 1
 
+        session = ttk.Frame(root)
+        session.grid(row=row, column=0, columnspan=2, sticky="we", pady=(6, 0))
+        row += 1
+        self.session_label = ttk.Label(session, text="", font=("Microsoft YaHei UI", 9), foreground="#333333")
+        self.session_label.pack(side="left")
+        ttk.Button(session, text="退出 B 站登录", command=self.logout).pack(side="right")
+
         self.path_label = ttk.Label(
             root,
             text=str(vs.STATE_FILE),
@@ -152,6 +159,14 @@ class ValveWindow:
         vs.set_all(on)
         self.sync()
 
+    def logout(self) -> None:
+        removed = vs.logout()
+        self.session_label.configure(
+            text="登录态：未保存（已删除）" if removed else "登录态：未保存",
+        )
+        if removed:
+            messagebox.showinfo("视频通道阀门", "已删掉本地保存的 B 站登录态（SESSDATA）。\n想再用时说「登录 B 站」重新拿一次。")
+
     # ------------------------------------------------------------------ 显示
 
     def sync(self) -> None:
@@ -168,6 +183,9 @@ class ValveWindow:
         on = [label for name, label in vs.CHANNELS if state["channels"].get(name)]
         summary = "、".join(on) if on else "全部关闭"
         self.status.configure(text=f"当前允许：{summary}\n最近：{vs.last_event()}")
+        self.session_label.configure(
+            text="登录态：已保存（用完记得退出）" if vs.has_session() else "登录态：未保存",
+        )
 
     def poll(self) -> None:
         """外部（插件/命令行）改了状态时，窗口跟着变；顺便处理托盘点单。"""
