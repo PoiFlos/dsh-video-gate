@@ -55,6 +55,9 @@ const PROMPT = `## 视频通道阀门（video-gate）
 
 用户装了视频通道阀门。规则：
 
+- **本会话默认未启用**。用户发「启用读取视频插件」（或「打开视频插件」）时：调一次
+  \`video_enable\`（on 省略即 true），然后口头确认「视频插件已启用」。用户说「关闭读取视频插件」时调
+  \`video_enable(on=false)\`。未启用时 \`video_read\` 会返回一句提示，照它说的做，不要绕。
 - 只有「\`video_read\`」能读视频；本地文件、Bilibili 两个通道各自有开关。
 - **站点通道默认关闭**。调用时如遇关闭，插件会向用户弹出选择框，由用户决定放行范围。用户拒绝就是拒绝：
   不要重试、不要换一种说法绕过、不要改用 \`web_fetch\` 去抓同一支视频。
@@ -72,6 +75,35 @@ export function apply(ctx, config) {
   const cfg = { ...(config || {}), pluginDir: HERE }
   /** sessionId -> Set<channel>（只在本进程内有效，不落盘） */
   const grants = new Map()
+  /** sessionId -> boolean：本会话是否已被「启用读取视频插件」唤醒 */
+  const armed = new Map()
+  const ARM_RE = /(启用|打开|开启|启动)[^。！？\n]{0,8}视频插件/
+  const DISARM_RE = /(关闭|停用|关掉|禁用|取消)[^。！？\n]{0,8}视频插件/
+  const isArmed = (sessionId) => armed.get(sessionId) === true
+
+  function setArmed(sessionId, value) {
+    if (armed.get(sessionId) === value) return false
+    armed.set(sessionId, value)
+    appendAudit(cfg, { event: value ? 'armed' : 'disarmed', session: String(sessionId) }).catch(() => {})
+    return true
+  }
+
+  // 用户直接在对话里发「启用读取视频插件」时，插件自己就醒过来（不需要模型配合）。
+  ctx.effect(
+    () =>
+      ctx.on('session/event', (session, event) => {
+        if (event?.type !== 'user/message') return
+        const blocks = event.data?.content ?? []
+        const text = blocks
+          .filter((block) => block?.type === 'text')
+          .map((block) => String(block.text ?? ''))
+          .join(' ')
+        if (!text) return
+        if (ARM_RE.test(text)) setArmed(session.id, true)
+        else if (DISARM_RE.test(text)) setArmed(session.id, false)
+      }),
+    'video-gate: arm listener',
+  )
 
   const askService = () => ctx.get?.('userQuestions')
   const attachService = () => ctx.get?.('attachments')
@@ -177,6 +209,16 @@ export function apply(ctx, config) {
         timeoutMs: 900_000,
         async execute(args, exec) {
           const source = String(args?.source ?? '')
+          if (!isArmed(exec.agent?.id)) {
+            return {
+              text:
+                '⛔ 视频插件还没启用。\n\n' +
+                '先在对话框里发一句「启用读取视频插件」，然后再发 B 站链接或本地视频路径。\n' +
+                '（想关掉时说「关闭读取视频插件」。这是会话级开关，重启 DSH 后要重新启用；' +
+                '`/video` 可以随时看状态。）',
+              images: [],
+            }
+          }
           const where = classify(source)
           if (where.error) return { text: `⛔ ${where.error}`, images: [] }
 
@@ -270,12 +312,13 @@ export function apply(ctx, config) {
           },
         },
         timeoutMs: 15_000,
-        async execute() {
+        async execute(_args, exec) {
           const state = await loadState(cfg)
           const lines = ['视频通道阀门（只读）', '']
           for (const channel of CHANNELS) {
             lines.push(`- ${LABELS[channel]}：${state.channels[channel] ? '开' : '关'}`)
           }
+          lines.push('', `本会话：${isArmed(exec.agent?.id) ? '已启用' : '未启用'}`)
           lines.push('', `状态文件：${stateFile(cfg)}`)
           lines.push(`本地根目录：${state.localRoots.length ? state.localRoots.join('；') : '（默认：当前工作目录 + 用户 Videos）'}`)
           lines.push('', '改阀门：直接说「打开/关闭某个视频通道」，或输入 /video 看状态。')
@@ -283,6 +326,47 @@ export function apply(ctx, config) {
         },
       }),
     'video-gate: video_channels',
+  )
+
+  // ----------------------------------------------------------- video_enable
+
+  ctx.effect(
+    () =>
+      ctx.tools.register({
+        name: 'video_enable',
+        description:
+          '启用或停用本会话的视频插件（幂等）。用户说「启用读取视频插件」时调用 on=true 确认；说「关闭读取视频插件」时用 on=false。',
+        parameters: {
+          type: 'object',
+          properties: {
+            on: { type: 'boolean', description: 'true 启用，false 停用；省略为 true' },
+          },
+          additionalProperties: false,
+        },
+        output: {
+          schema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
+          render(_args, value) {
+            return [{ type: 'text', text: String(value?.text ?? '') }]
+          },
+        },
+        timeoutMs: 15_000,
+        async execute(args, exec) {
+          const on = args?.on !== false
+          const changed = setArmed(exec.agent?.id, on)
+          if (!on) {
+            return { text: `视频插件已停用（本会话）。要再用就说「启用读取视频插件」。${changed ? '' : '\n（之前就已经是停用状态）'}` }
+          }
+          return {
+            text:
+              `视频插件已启用（本会话）${changed ? '' : '，之前就已经是启用状态'}。\n\n` +
+              '接下来可以直接：\n' +
+              '· 发 B 站链接 —— 会弹出阀门让你选择放行范围\n' +
+              '· 发本地视频路径 —— 在允许的根目录内直接抽帧\n' +
+              '· 说「没字幕，听听在说什么」—— 本地 whisper 转写',
+          }
+        },
+      }),
+    'video-gate: video_enable',
   )
 
   // ------------------------------------------------------------ video_valve
