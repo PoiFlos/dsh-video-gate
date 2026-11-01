@@ -2,6 +2,8 @@
 
 视频通道**阀门**插件：默认只读本地文件；Bilibili 站点通道默认关闭，读取前必须由你在弹窗里放行。YouTube、小红书、Netflix 都不在列表里（前两个要额外程序和 cookie，第三个是 DRM）。
 
+> 平台：**Windows 10/11**（依赖 `install-deps.ps1`、阀门窗口都用 PowerShell / Python；macOS、Linux 未适配）。
+
 > **第一次用？** 看 [docs/安装与使用.md](docs/安装与使用.md)：从下载、装依赖、配 `localRoots`，
 > 到日常问法、卸载和故障排查，都在那一份里。
 >
