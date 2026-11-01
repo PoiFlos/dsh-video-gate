@@ -4,8 +4,8 @@
 
 ## 为什么是这个来源
 
-原计划是从 gyan.dev 或 GitHub Releases 下 BtbN 的官方包，但**直连经常连不上 github.com 与 gyan.dev**
-（curl 超时），而 PyPI 可达。于是改用 PyPI 上 `imageio-ffmpeg` 0.7.0 的 Windows wheel：
+原计划是从 gyan.dev 或 GitHub Releases 下 BtbN 的官方包，但**直连 github.com 与 gyan.dev 经常超时**，
+而 PyPI 可达。于是改用 PyPI 上 `imageio-ffmpeg` 0.7.0 的 Windows wheel：
 它把 **gyan.dev 的 essentials build** 原样打进了包里，因此仍能拿到同一份二进制，并且**下载有官方 sha256 可对**。
 
 二进制自己报告的版本：
@@ -21,7 +21,7 @@ configuration: --enable-gpl --enable-version3 --enable-static ... --enable-libx2
 |---|---|
 | wheel | `imageio_ffmpeg-0.7.0-py3-none-win_amd64.whl`（31,247,004 字节） |
 | wheel sha256（PyPI 官方 digest） | `7a22b45f60321d4172bdf2bc61f716bce4c81b85727bd59c7c7e371055a6a440` |
-| 下载镜像 | `https://mirrors.aliyun.com/pypi/`（官方源直连很慢） |
+| 下载镜像 | `https://mirrors.aliyun.com/pypi/`（官方源直连很慢，镜像快一个量级） |
 | 安装后 `ffmpeg.exe` sha256 | `2ce797a0f88d7f067180338fb227f7b1928ea727bd9a4d7a1d022f7c52af71a3` |
 | 大小 | 87,638,016 字节 |
 

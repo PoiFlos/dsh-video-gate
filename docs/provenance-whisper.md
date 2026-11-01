@@ -8,7 +8,7 @@
 | 项 | 值 |
 |---|---|
 | 来源 | GitHub `ggml-org/whisper.cpp` 的 nightly 资产 `whisper-bin-x64.zip`，tag `b5454`（2026-10-06） |
-| 下载通道 | `api.github.com/repos/.../releases/assets/616096933`（带 `Accept: application/octet-stream`）——**直连 github.com 在经常超时，只能走 API 端点的 302** |
+| 下载通道 | `api.github.com/repos/.../releases/assets/616096933`（带 `Accept: application/octet-stream`）——**直连 github.com 经常超时，只能走 API 端点的 302** |
 | 大小 / sha256 | 8,928,640 字节 / `6ba69e3482d7826214f90a6a9c84ca07782aec1e1d0c6a7c30c994fd5d816ccb` |
 | 保留的文件 | `whisper-cli.exe`、`whisper.dll`、`ggml.dll`、`ggml-base.dll`、`ggml-cpu-*.dll`（共 13 个，11.1MB） |
 | 丢弃的 | `whisper-server.exe`、`stream.exe`、`bench.exe`、各种 `test-*.exe`、`SDL2.dll`、`llama.dll`、`parakeet-*`、`wchess.exe` |
@@ -43,7 +43,7 @@
 - 超时：转换 5 分钟、转写 15 分钟；单次最多处理前 15 分钟音频
 - 不联网：没有任何 API key、上传或回调；`whisper-server` 已从包里剔除
 
-## 实测（2026-11-01）
+## 实测
 
 用 Windows SAPI 的中文语音（Microsoft Huihui）合成一句：
 
